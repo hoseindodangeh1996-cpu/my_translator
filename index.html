@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ترجمه صوتی فارسی به ارمنی</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#121212">
+    <style>
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --primary-color: #6366f1;
+            --primary-hover: #4f46e5;
+            --accent-color: #22c55e;
+            --danger-color: #ef4444;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border-color: #2d2d2d;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+
+        .icon-btn {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .card {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative;
+        }
+
+        .card-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .card-content {
+            font-size: 1.1rem;
+            min-height: 60px;
+            outline: none;
+            word-break: break-word;
+            line-height: 1.5;
+        }
+
+        .result-card {
+            background: linear-gradient(145deg, #1e1e1e, #181824);
+            border-color: #3730a3;
+        }
+
+        .result-content {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #818cf8;
+            direction: ltr;
+            text-align: left;
+        }
+
+        .action-row {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .small-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .small-btn:hover {
+            color: var(--text-main);
+            border-color: var(--text-muted);
+        }
+
+        .mic-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            gap: 12px;
+        }
+
+        .mic-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            border: none;
+            color: white;
+            font-size: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+            transition: background-color 0.2s;
+        }
+
+        .mic-btn.recording {
+            background-color: var(--danger-color);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+            }
+            70% {
+                box-shadow: 0 0 0 20px rgba(239, 68, 68, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
+
+        .status-text {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            height: 20px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 100;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            width: 100%;
+            max-width: 400px;
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-group label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .input-group select, .input-group input {
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .primary-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .primary-btn:hover {
+            background: var(--primary-hover);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>مترجم صوتی فارسی ⇄ ارمنی</h1>
+        <button class="icon-btn" id="settingsBtn" title="تنظیمات API">⚙️</button>
+    </header>
+
+    <div class="main-container">
+        <!-- Persian Speech Input Card -->
+        <div class="card">
+            <div class="card-label">
+                <span>متن فارسی (گفتار شما)</span>
+                <span id="charCount">0 کاراکتر</span>
+            </div>
+            <div class="card-content" id="persianText" contenteditable="true" placeholder="با زدن دکمه میکروفون صحبت کنید یا تایپ کنید..."></div>
+            <div class="action-row">
+                <button class="small-btn" id="clearBtn">پاک کردن</button>
+                <button class="small-btn" id="translateNowBtn" style="background: var(--primary-color); color: white; border: none;">ترجمه کن</button>
+            </div>
+        </div>
+
+        <!-- Mic Button Section -->
+        <div class="mic-section">
+            <button class="mic-btn" id="micBtn" title="شروع ضبط">🎙️</button>
+            <div class="status-text" id="statusText">آماده برای ضبط صدا</div>
+        </div>
+
+        <!-- Armenian Translation Card -->
+        <div class="card result-card">
+            <div class="card-label">
+                <span>ترجمه ارمنی (عاملیانه / ارمنستان)</span>
+            </div>
+            <div class="card-content result-content" id="armenianText">ترجمه اینجا نمایش داده می‌شود...</div>
+            <div class="action-row">
+                <button class="small-btn" id="speakBtn">🔊 پخش صوتی</button>
+                <button class="small-btn" id="copyBtn">📋 کپی متن</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-title">تنظیمات هوش مصنوعی</div>
+            <div class="input-group">
+                <label>انتخاب سرویس</label>
+                <select id="apiProvider">
+                    <option value="groq">Groq (بسیار سریع و رایگان)</option>
+                    <option value="gemini">Google Gemini</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>کلید API (API Key)</label>
+                <input type="password" id="apiKeyInput" placeholder="کلید خود را اینجا وارد کنید...">
+            </div>
+            <button class="primary-btn" id="saveSettingsBtn">ذخیره تنظیمات</button>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const micBtn = document.getElementById('micBtn');
+        const statusText = document.getElementById('statusText');
+        const persianText = document.getElementById('persianText');
+        const armenianText = document.getElementById('armenianText');
+        const clearBtn = document.getElementById('clearBtn');
+        const translateNowBtn = document.getElementById('translateNowBtn');
+        const speakBtn = document.getElementById('speakBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsModal = document.getElementById('settingsModal');
+        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+        const apiProviderSelect = document.getElementById('apiProvider');
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        const charCount = document.getElementById('charCount');
+
+        // Load Settings
+        let apiKey = localStorage.getItem('translator_api_key') || '';
+        let apiProvider = localStorage.getItem('translator_provider') || 'groq';
+        apiKeyInput.value = apiKey;
+        apiProviderSelect.value = apiProvider;
+
+        settingsBtn.addEventListener('click', () => settingsModal.classList.add('active'));
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) settingsModal.classList.remove('active');
+        });
+
+        saveSettingsBtn.addEventListener('click', () => {
+            apiKey = apiKeyInput.value.trim();
+            apiProvider = apiProviderSelect.value;
+            localStorage.setItem('translator_api_key', apiKey);
+            localStorage.setItem('translator_provider', apiProvider);
+            settingsModal.classList.remove('active');
+            alert('تنظیمات با موفقیت ذخیره شد.');
+        });
+
+        // Speech Recognition Setup
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition = null;
+        let isRecording = false;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.lang = 'fa-IR';
+            recognition.continuous = false;
+            recognition.interimResults = true;
+
+            recognition.onstart = () => {
+                isRecording = true;
+                micBtn.classList.add('recording');
+                statusText.textContent = 'در حال گوش دادن... صحبت کنید';
+            };
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+
+                if (finalTranscript) {
+                    persianText.textContent += ' ' + finalTranscript;
+                    updateCharCount();
+                    // Auto translate after speech ends
+                    translateText(persianText.textContent.trim());
+                } else if (interimTranscript) {
+                    statusText.textContent = interimTranscript;
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error(event.error);
+                statusText.textContent = 'خطا در تشخیص صدا: ' + event.error;
+                stopRecordingState();
+            };
+
+            recognition.onend = () => {
+                stopRecordingState();
+            };
+        } else {
+            statusText.textContent = 'مرورگر شما از تشخیص صوتی پشتیبانی نمی‌کند.';
+            micBtn.style.opacity = '0.5';
+            micBtn.disabled = true;
+        }
+
+        function stopRecordingState() {
+            isRecording = false;
+            micBtn.classList.remove('recording');
+            statusText.textContent = 'آماده برای ضبط صدا';
+        }
+
+        micBtn.addEventListener('click', () => {
+            if (!recognition) return;
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                if (!apiKey) {
+                    settingsModal.classList.add('active');
+                    alert('لطفاً ابتدا کلید API خود را در تنظیمات وارد کنید.');
+                    return;
+                }
+                persianText.textContent = '';
+                try {
+                    recognition.start();
+                } catch (e) {
+                    recognition.stop();
+                }
+            }
+        });
+
+        persianText.addEventListener('input', updateCharCount);
+        function updateCharCount() {
+            charCount.textContent = persianText.textContent.length + ' کاراکتر';
+        }
+
+        clearBtn.addEventListener('click', () => {
+            persianText.textContent = '';
+            armenianText.textContent = 'ترجمه اینجا نمایش داده می‌شود...';
+            updateCharCount();
+        });
+
+        translateNowBtn.addEventListener('click', () => {
+            const text = persianText.textContent.trim();
+            if (text) translateText(text);
+        });
+
+        // AI Translation Function
+        async function translateText(text) {
+            if (!apiKey) {
+                settingsModal.classList.add('active');
+                alert('لطفاً ابتدا کلید API را وارد کنید.');
+                return;
+            }
+
+            armenianText.textContent = 'در حال ترجمه روان ارمنی...';
+            statusText.textContent = 'ارسال به هوش مصنوعی...';
+
+            const systemPrompt = "You are a professional native translator from Persian to colloquial, everyday spoken Armenian (Armenia dialect, Eastern Armenian). Translate the given Persian sentence into natural, fluent colloquial Armenian used daily by native speakers in Yerevan. Output ONLY the translated Armenian text without any quotes, explanations, or extra remarks.";
+
+            try {
+                let responseData = '';
+                if (apiProvider === 'groq') {
+                    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${apiKey}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            model: 'llama-3.3-70b-versatile',
+                            messages: [
+                                { role: 'system', content: systemPrompt },
+                                { role: 'user', content: text }
+                            ],
+                            temperature: 0.3
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.error) throw new Error(data.error.message);
+                    responseData = data.choices[0].message.content;
+                } else {
+                    // Gemini API
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [
+                                { role: 'user', content: `${systemPrompt}\n\nPersian text: ${text}` }
+                            ]
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.error) throw new Error(data.error.message);
+                    responseData = data.candidates[0].content.parts[0].text;
+                }
+
+                armenianText.textContent = responseData.trim();
+                statusText.textContent = 'ترجمه انجام شد.';
+            } catch (err) {
+                console.error(err);
+                armenianText.textContent = 'خطا در ارتباط با هوش مصنوعی';
+                statusText.textContent = 'خطا: ' + err.message;
+            }
+        }
+
+        // Text-to-Speech (Armenian)
+        speakBtn.addEventListener('click', () => {
+            const textToSpeak = armenianText.textContent;
+            if (!textToSpeak || textToSpeak.includes('نمایش داده می‌شود')) return;
+
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                utterance.lang = 'hy-AM';
+                utterance.rate = 0.9; // Normal fluent conversational speed
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert('مرورگر شما از پخش صوتی پشتیبانی نمی‌کند.');
+            }
+        });
+
+        // Copy Button
+        copyBtn.addEventListener('click', () => {
+            const textToCopy = armenianText.textContent;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = '✅ کپی شد';
+                setTimeout(() => copyBtn.textContent = originalText, 2000);
+            });
+        });
+
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('ServiceWorker registered!', reg))
+                    .catch(err => console.log('ServiceWorker registration failed: ', err));
+            });
+        }
+    </script>
+</body>
+</html>

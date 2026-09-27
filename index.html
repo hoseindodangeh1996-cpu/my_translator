@@ -464,6 +464,9 @@
             try {
                 let responseData = '';
                 if (apiProvider === 'groq') {
+                    // NOTE: llama-3.1-8b-instant / llama-3.3-70b-versatile were
+                    // deprecated by Groq on 2026-08-16. openai/gpt-oss-120b is the
+                    // current recommended general-purpose replacement.
                     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                         method: 'POST',
                         headers: {
@@ -471,7 +474,7 @@
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            model: 'llama-3.1-8b-instant',
+                            model: 'openai/gpt-oss-120b',
                             messages: [
                                 { role: 'system', content: systemPrompt },
                                 { role: 'user', content: text }
@@ -480,7 +483,15 @@
                         })
                     });
                     const data = await res.json();
-                    if (data.error) throw new Error(data.error.message);
+                    if (!res.ok || data.error) {
+                        throw new Error(
+                            (data.error && data.error.message) ||
+                            `خطای HTTP ${res.status} از Groq`
+                        );
+                    }
+                    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+                        throw new Error('پاسخ نامعتبر از Groq دریافت شد.');
+                    }
                     responseData = data.choices[0].message.content;
                 } else {
                     // Gemini API
@@ -489,12 +500,25 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             contents: [
-                                { role: 'user', content: `${systemPrompt}\n\nPersian text: ${text}` }
+                                {
+                                    role: 'user',
+                                    parts: [
+                                        { text: `${systemPrompt}\n\nPersian text: ${text}` }
+                                    ]
+                                }
                             ]
                         })
                     });
                     const data = await res.json();
-                    if (data.error) throw new Error(data.error.message);
+                    if (!res.ok || data.error) {
+                        throw new Error(
+                            (data.error && data.error.message) ||
+                            `خطای HTTP ${res.status} از Gemini`
+                        );
+                    }
+                    if (!data.candidates || !data.candidates[0]) {
+                        throw new Error('پاسخ نامعتبر از Gemini دریافت شد.');
+                    }
                     responseData = data.candidates[0].content.parts[0].text;
                 }
 
@@ -537,8 +561,23 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('ServiceWorker registered!', reg))
+                    .then(reg => {
+                        console.log('ServiceWorker registered!', reg);
+                        // Actively check for a newer sw.js on every load so
+                        // GitHub Pages / mobile browsers don't get stuck on
+                        // an old cached version.
+                        reg.update();
+                    })
                     .catch(err => console.log('ServiceWorker registration failed: ', err));
+            });
+
+            // When a new service worker takes control (i.e. a new deploy was
+            // just activated), reload once so the user gets the fresh assets.
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (refreshing) return;
+                refreshing = true;
+                window.location.reload();
             });
         }
     </script>

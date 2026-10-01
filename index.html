@@ -303,7 +303,7 @@
             <div class="input-group">
                 <label>انتخاب سرویس</label>
                 <select id="apiProvider">
-                    <option value="groq">Groq (Llama 3)</option>
+                    <option value="groq">Groq (بسیار سریع و رایگان)</option>
                     <option value="gemini">Google Gemini</option>
                 </select>
             </div>
@@ -376,13 +376,14 @@
             updateCharCount();
         });
 
+        // Fixed Speech Recognition (Non-continuous to prevent text duplication/echo)
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
         let isRecording = false;
 
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
-            recognition.continuous = false;
+            recognition.continuous = false; // Fixed: prevents repeating words loop
             recognition.interimResults = true;
 
             recognition.onstart = () => {
@@ -488,7 +489,7 @@
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            model: 'llama-3.1-8b-instant',
+                            model: 'openai/gpt-oss-120b',
                             messages: [
                                 { role: 'system', content: systemPrompt },
                                 { role: 'user', content: text }
@@ -506,7 +507,7 @@
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            contents: [{ parts: [{ text: `${systemPrompt}\n\nText: ${text}` }] }]
+                            contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\nText: ${text}` }] }]
                         })
                     });
                     const data = await res.json();
@@ -525,6 +526,7 @@
             }
         }
 
+        // Online Audio TTS Fix (Bypasses missing system speech voices on Chrome mobile)
         speakBtn.addEventListener('click', () => {
             const textToSpeak = targetText.textContent;
             if (!textToSpeak || textToSpeak.includes('نمایش داده می‌شود') || textToSpeak.includes('خطا')) return;
@@ -547,6 +549,12 @@
                 setTimeout(() => copyBtn.textContent = originalText, 2000);
             });
         });
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(reg => reg.update());
+            });
+        }
     </script>
 </body>
 </html>

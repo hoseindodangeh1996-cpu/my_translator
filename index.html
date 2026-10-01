@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مترجم صوتی فارسی ⇄ ارمنی</title>
+    <title>مترجم صوتی فارسی ⇄ ارمنی (Whisper)</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#121212">
     <style>
@@ -328,8 +328,8 @@
 
         <!-- Mic Button Section -->
         <div class="mic-section">
-            <button class="mic-btn" id="micBtn" title="شروع ضبط">🎙️</button>
-            <div class="status-text" id="statusText">آماده برای ضبط صدا</div>
+            <button class="mic-btn" id="micBtn" title="شروع ضبط صدا">🎙️</button>
+            <div class="status-text" id="statusText">آماده برای ضبط صدا (Whisper)</div>
         </div>
 
         <!-- Result Card -->
@@ -350,29 +350,17 @@
         <div class="modal-content">
             <div class="modal-title">تنظیمات هوش مصنوعی</div>
             <div class="input-group">
-                <label>انتخاب سرویس</label>
-                <select id="apiProvider">
-                    <option value="groq">Groq (بسیار سریع و رایگان)</option>
-                    <option value="gemini">Google Gemini</option>
-                </select>
-            </div>
-            <div class="input-group">
-                <label>کلید API (API Key)</label>
-                <input type="password" id="apiKeyInput" placeholder="کلید خود را اینجا وارد کنید...">
+                <label>کلید API گروک (Groq API Key)</label>
+                <input type="password" id="apiKeyInput" placeholder="gsk_...">
             </div>
             <div class="hint">
-                توجه: تشخیص گفتار ارمنی در مرورگرهای موبایل به دلیل محدودیت موتور تشخیص صدای گوگل برای زبان ارمنی،
-                ممکن است همیشه کامل دقیق نباشد. این برنامه یک لایه‌ی پاک‌سازی و بازسازی حروف را به صورت خودکار اعمال می‌کند،
-                اما این لایه یک اصلاح احتمالی است، نه تضمین ۱۰۰٪.
+                این نسخه برای تشخیص گفتار دقیق ارمنی و فارسی از موتور قدرتمند **Whisper (groq)** استفاده می‌کند و مشکلات یونیکد مرورگر را به طور کامل دور می‌زند.
             </div>
             <button class="primary-btn" id="saveSettingsBtn">ذخیره تنظیمات</button>
         </div>
     </div>
 
     <script>
-        // ======================================================
-        // DOM Elements
-        // ======================================================
         const micBtn = document.getElementById('micBtn');
         const statusText = document.getElementById('statusText');
         const sourceText = document.getElementById('sourceText');
@@ -387,17 +375,11 @@
         const settingsBtn = document.getElementById('settingsBtn');
         const settingsModal = document.getElementById('settingsModal');
         const saveSettingsBtn = document.getElementById('saveSettingsBtn');
-        const apiProviderSelect = document.getElementById('apiProvider');
         const apiKeyInput = document.getElementById('apiKeyInput');
         const charCount = document.getElementById('charCount');
 
-        // ======================================================
-        // Settings
-        // ======================================================
         let apiKey = localStorage.getItem('translator_api_key') || '';
-        let apiProvider = localStorage.getItem('translator_provider') || 'groq';
         apiKeyInput.value = apiKey;
-        apiProviderSelect.value = apiProvider;
 
         settingsBtn.addEventListener('click', () => settingsModal.classList.add('active'));
         settingsModal.addEventListener('click', (e) => {
@@ -406,39 +388,33 @@
 
         saveSettingsBtn.addEventListener('click', () => {
             apiKey = apiKeyInput.value.trim();
-            apiProvider = apiProviderSelect.value;
             localStorage.setItem('translator_api_key', apiKey);
-            localStorage.setItem('translator_provider', apiProvider);
             settingsModal.classList.remove('active');
             alert('تنظیمات با موفقیت ذخیره شد.');
         });
 
-        // ======================================================
-        // Direction state: 'fa2hy' (Persian speech -> Armenian text)
-        //               or 'hy2fa' (Armenian speech -> Persian text)
-        // ======================================================
         let direction = 'fa2hy';
 
         const DIR_CONFIG = {
             fa2hy: {
-                recogLang: 'fa-IR',
+                whisperLang: 'fa',
                 sourceDir: 'rtl',
                 targetDir: 'ltr',
                 sourceLabel: 'متن فارسی (گفتار شما)',
                 targetLabel: 'ترجمه ارمنی (محاوره‌ای / ارمنستان)',
-                placeholder: 'با زدن دکمه میکروفون صحبت کنید یا تایپ کنید...',
+                placeholder: 'با زدن دکمه میکروفون صحبت کنید...',
                 targetPlaceholder: 'ترجمه اینجا نمایش داده می‌شود...',
                 ttsLang: 'hy',
                 synthLangPrefixes: ['hy'],
                 systemPrompt: "You are a professional native translator from Persian to colloquial, everyday spoken Armenian (Armenia dialect, Eastern Armenian). Translate the given Persian sentence into natural, fluent colloquial Armenian used daily by native speakers in Yerevan. Output ONLY the translated Armenian text without any quotes, explanations, or extra remarks."
             },
             hy2fa: {
-                recogLang: 'hy-AM',
+                whisperLang: 'hy',
                 sourceDir: 'ltr',
                 targetDir: 'rtl',
                 sourceLabel: 'متن ارمنی (گفتار شما)',
                 targetLabel: 'ترجمه فارسی',
-                placeholder: 'میکروفون را بزنید یا به ارمنی تایپ کنید...',
+                placeholder: 'میکروفون را بزنید یا به ارمنی صحبت کنید...',
                 targetPlaceholder: 'ترجمه فارسی اینجا نمایش داده می‌شود...',
                 ttsLang: 'fa',
                 synthLangPrefixes: ['fa'],
@@ -453,16 +429,12 @@
             sourceText.setAttribute('dir', cfg.sourceDir);
             sourceText.setAttribute('placeholder', cfg.placeholder);
             targetText.setAttribute('dir', cfg.targetDir);
-            if (recognition) recognition.lang = cfg.recogLang;
         }
 
         swapBtn.addEventListener('click', () => {
             direction = (direction === 'fa2hy') ? 'hy2fa' : 'fa2hy';
-            // Move current translation result into the source box so the
-            // user can keep iterating in the new direction, and clear target.
             const prevTarget = targetText.textContent.trim();
-            const isPlaceholder = prevTarget === DIR_CONFIG.fa2hy.targetPlaceholder ||
-                                   prevTarget === DIR_CONFIG.hy2fa.targetPlaceholder;
+            const isPlaceholder = prevTarget.includes('نمایش داده می‌شود');
             sourceText.textContent = isPlaceholder ? '' : prevTarget;
             targetText.textContent = DIR_CONFIG[direction].targetPlaceholder;
             applyDirection();
@@ -472,209 +444,102 @@
         applyDirection();
 
         // ======================================================
-        // Armenian script normalization / best-effort recovery layer
-        //
-        // IMPORTANT (read before trusting this blindly): Chrome's speech
-        // recognizer for hy-AM is a low-resource model on Google's backend.
-        // When it mis-hears Armenian speech it sometimes emits Latin letters,
-        // Russian/Cyrillic fragments, or broken transliteration instead of
-        // real Armenian Unicode. This function is a *heuristic cleanup*:
-        //   1. If the text is already mostly Armenian script, it just strips
-        //      stray non-Armenian noise characters.
-        //   2. If the text is mostly Latin (a likely transliteration dump),
-        //      it runs a longest-match-first Latin -> Armenian phonetic
-        //      transliteration table over it.
-        // This CANNOT perfectly reconstruct speech the recognizer actually
-        // misheard -- that is a fundamentally lossy, non-deterministic
-        // problem. It measurably reduces garbage; it does not guarantee
-        // correctness. For guaranteed-accurate Armenian STT you would need
-        // to record raw audio and send it to a real ASR model (e.g. Groq's
-        // Whisper transcription endpoint) instead of the browser's built-in
-        // recognizer.
+        // MediaRecorder + Groq Whisper API (The Real Fix!)
         // ======================================================
-        const LATIN_TO_ARMENIAN = [
-            // multi-letter digraphs first (longest match wins)
-            ['dz', 'ձ'], ['ts', 'ց'], ['tw', 'թ'], ['th', 'թ'], ['zh', 'ժ'],
-            ['sh', 'շ'], ['ch', 'չ'], ['gh', 'ղ'], ['kh', 'խ'], ['ye', 'ե'],
-            ['yo', 'յո'], ['vo', 'ո'],
-            // single letters
-            ['a', 'ա'], ['b', 'բ'], ['g', 'գ'], ['d', 'դ'], ['e', 'ե'],
-            ['z', 'զ'], ['y', 'յ'], ['i', 'ի'], ['l', 'լ'], ['x', 'խ'],
-            ['c', 'ծ'], ['k', 'կ'], ['h', 'հ'], ['j', 'ջ'], ['m', 'մ'],
-            ['n', 'ն'], ['o', 'ո'], ['p', 'պ'], ['r', 'ր'], ['s', 'ս'],
-            ['v', 'վ'], ['t', 'տ'], ['u', 'ու'], ['f', 'ֆ'], ['w', 'վ'],
-            ['q', 'ք']
-        ];
-
-        function transliterateLatinToArmenian(str) {
-            let out = '';
-            let i = 0;
-            const lower = str.toLowerCase();
-            while (i < lower.length) {
-                let matched = false;
-                for (const [latin, arm] of LATIN_TO_ARMENIAN) {
-                    if (lower.startsWith(latin, i)) {
-                        out += arm;
-                        i += latin.length;
-                        matched = true;
-                        break;
-                    }
-                }
-                if (!matched) {
-                    const ch = str[i];
-                    // keep spaces/punctuation, drop anything else unmatched
-                    out += /[\s.,!?؟،-]/.test(ch) ? ch : '';
-                    i += 1;
-                }
-            }
-            return out.replace(/\s+/g, ' ').trim();
-        }
-
-        function normalizeArmenianSpeechResult(raw) {
-            if (!raw) return raw;
-            const text = raw.trim();
-            const armenianChars = (text.match(/[\u0530-\u058F]/g) || []).length;
-            const latinChars = (text.match(/[A-Za-z]/g) || []).length;
-            const totalLetters = armenianChars + latinChars;
-
-            if (totalLetters === 0) return text;
-
-            // Mostly Armenian already: just strip stray junk characters
-            // (keep Armenian block, basic punctuation, spaces, digits).
-            if (armenianChars >= latinChars) {
-                return text
-                    .split('')
-                    .filter(ch => /[\u0530-\u058F\s.,!?؟،0-9-]/.test(ch))
-                    .join('')
-                    .replace(/\s+/g, ' ')
-                    .trim();
-            }
-
-            // Mostly Latin / garbled: attempt best-effort transliteration.
-            const rebuilt = transliterateLatinToArmenian(text);
-            return rebuilt || text;
-        }
-
-        function normalizeRecognizedText(raw, lang) {
-            if (lang && lang.startsWith('hy')) {
-                return normalizeArmenianSpeechResult(raw);
-            }
-            return raw.trim();
-        }
-
-        // ======================================================
-        // Speech Recognition Setup (with silence-based auto-stop)
-        // ======================================================
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        let recognition = null;
+        let mediaRecorder = null;
+        let audioChunks = [];
         let isRecording = false;
-        let silenceTimer = null;
-        const SILENCE_TIMEOUT_MS = 2000;
 
-        function resetSilenceTimer() {
-            if (silenceTimer) clearTimeout(silenceTimer);
-            silenceTimer = setTimeout(() => {
-                if (isRecording && recognition) {
-                    recognition.stop();
-                }
-            }, SILENCE_TIMEOUT_MS);
-        }
-
-        function clearSilenceTimer() {
-            if (silenceTimer) {
-                clearTimeout(silenceTimer);
-                silenceTimer = null;
+        async function startRecording() {
+            if (!apiKey) {
+                settingsModal.classList.add('active');
+                alert('لطفاً ابتدا کلید API گروک را در تنظیمات وارد کنید.');
+                return;
             }
-        }
 
-        if (SpeechRecognition) {
-            recognition = new SpeechRecognition();
-            recognition.lang = DIR_CONFIG[direction].recogLang;
-            recognition.continuous = true;      // keep listening until we stop it ourselves
-            recognition.interimResults = true;
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                audioChunks = [];
 
-            recognition.onstart = () => {
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    // Stop all microphone tracks
+                    stream.getTracks().forEach(track => track.stop());
+                    await sendAudioToWhisper(audioBlob);
+                };
+
+                mediaRecorder.start();
                 isRecording = true;
                 micBtn.classList.add('recording');
                 statusText.className = 'status-text';
-                statusText.textContent = 'در حال گوش دادن... صحبت کنید';
-                resetSilenceTimer();
-            };
-
-            recognition.onresult = (event) => {
-                resetSilenceTimer(); // any new audio activity pushes the auto-stop out
-
-                let interimTranscript = '';
-                let finalTranscript = '';
-
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    const chunk = event.results[i][0].transcript;
-                    if (event.results[i].isFinal) {
-                        finalTranscript += chunk;
-                    } else {
-                        interimTranscript += chunk;
-                    }
-                }
-
-                if (finalTranscript) {
-                    const cleaned = normalizeRecognizedText(finalTranscript, recognition.lang);
-                    sourceText.textContent =
-                        (sourceText.textContent ? sourceText.textContent + ' ' : '') + cleaned;
-                    updateCharCount();
-                } else if (interimTranscript) {
-                    statusText.textContent = interimTranscript;
-                }
-            };
-
-            recognition.onerror = (event) => {
-                console.error(event.error);
+                statusText.textContent = 'در حال ضبط صدا... دوباره بزنید تا ارسال شود';
+            } catch (err) {
+                console.error(err);
                 statusText.className = 'status-text err';
-                statusText.textContent = 'خطا در تشخیص صدا: ' + event.error;
-                stopRecordingState();
-            };
-
-            recognition.onend = () => {
-                clearSilenceTimer();
-                const finalText = sourceText.textContent.trim();
-                stopRecordingState();
-                if (finalText) {
-                    translateText(finalText);
-                }
-            };
-        } else {
-            statusText.textContent = 'مرورگر شما از تشخیص صوتی پشتیبانی نمی‌کند.';
-            micBtn.style.opacity = '0.5';
-            micBtn.disabled = true;
+                statusText.textContent = 'خطا در دسترسی به میکروفون: ' + err.message;
+            }
         }
 
-        function stopRecordingState() {
-            isRecording = false;
-            micBtn.classList.remove('recording');
-            if (!statusText.classList.contains('err')) {
-                statusText.className = 'status-text';
-                statusText.textContent = 'آماده برای ضبط صدا';
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                isRecording = false;
+                micBtn.classList.remove('recording');
             }
         }
 
         micBtn.addEventListener('click', () => {
-            if (!recognition) return;
             if (isRecording) {
-                recognition.stop();
+                stopRecording();
             } else {
-                if (!apiKey) {
-                    settingsModal.classList.add('active');
-                    alert('لطفاً ابتدا کلید API خود را در تنظیمات وارد کنید.');
-                    return;
-                }
-                sourceText.textContent = '';
-                try {
-                    recognition.lang = DIR_CONFIG[direction].recogLang;
-                    recognition.start();
-                } catch (e) {
-                    recognition.stop();
-                }
+                startRecording();
             }
         });
+
+        async function sendAudioToWhisper(audioBlob) {
+            const cfg = DIR_CONFIG[direction];
+            statusText.className = 'status-text';
+            statusText.textContent = 'در حال ارسال به Whisper...';
+
+            const formData = new FormData();
+            formData.append('file', audioBlob, 'recording.webm');
+            formData.append('model', 'whisper-large-v3');
+            formData.append('language', cfg.whisperLang);
+
+            try {
+                const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: formData
+                });
+
+                const data = await res.json();
+                if (!res.ok || data.error) {
+                    throw new Error((data.error && data.error.message) || `خطای سرور: ${res.status}`);
+                }
+
+                const text = data.text ? data.text.trim() : '';
+                if (text) {
+                    sourceText.textContent = text;
+                    updateCharCount();
+                    translateText(text);
+                } else {
+                    statusText.className = 'status-text warn';
+                    statusText.textContent = 'صدایی تشخیص داده نشد، دوباره تلاش کنید.';
+                }
+            } catch (err) {
+                console.error(err);
+                statusText.className = 'status-text err';
+                statusText.textContent = 'خطا در Whisper: ' + err.message;
+            }
+        }
 
         sourceText.addEventListener('input', updateCharCount);
         function updateCharCount() {
@@ -693,7 +558,7 @@
         });
 
         // ======================================================
-        // AI Translation
+        // AI Translation (Groq LLM)
         // ======================================================
         async function translateText(text) {
             if (!apiKey) {
@@ -708,57 +573,28 @@
             statusText.textContent = 'ارسال به هوش مصنوعی...';
 
             try {
-                let responseData = '';
-                if (apiProvider === 'groq') {
-                    // NOTE: llama-3.1-8b-instant / llama-3.3-70b-versatile were
-                    // deprecated by Groq on 2026-08-16. openai/gpt-oss-120b is
-                    // the current recommended general-purpose replacement.
-                    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${apiKey}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            model: 'openai/gpt-oss-120b',
-                            messages: [
-                                { role: 'system', content: cfg.systemPrompt },
-                                { role: 'user', content: text }
-                            ],
-                            temperature: 0.3
-                        })
-                    });
-                    const data = await res.json();
-                    if (!res.ok || data.error) {
-                        throw new Error((data.error && data.error.message) || `خطای HTTP ${res.status} از Groq`);
-                    }
-                    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-                        throw new Error('پاسخ نامعتبر از Groq دریافت شد.');
-                    }
-                    responseData = data.choices[0].message.content;
-                } else {
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [
-                                {
-                                    role: 'user',
-                                    parts: [{ text: `${cfg.systemPrompt}\n\nText: ${text}` }]
-                                }
-                            ]
-                        })
-                    });
-                    const data = await res.json();
-                    if (!res.ok || data.error) {
-                        throw new Error((data.error && data.error.message) || `خطای HTTP ${res.status} از Gemini`);
-                    }
-                    if (!data.candidates || !data.candidates[0]) {
-                        throw new Error('پاسخ نامعتبر از Gemini دریافت شد.');
-                    }
-                    responseData = data.candidates[0].content.parts[0].text;
+                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: 'llama-3.3-70b-versatile',
+                        messages: [
+                            { role: 'system', content: cfg.systemPrompt },
+                            { role: 'user', content: text }
+                        ],
+                        temperature: 0.3
+                    })
+                });
+
+                const data = await res.json();
+                if (!res.ok || data.error) {
+                    throw new Error((data.error && data.error.message) || `خطای HTTP ${res.status}`);
                 }
 
+                const responseData = data.choices[0].message.content;
                 targetText.textContent = responseData.trim();
                 statusText.textContent = 'ترجمه انجام شد.';
             } catch (err) {
@@ -770,11 +606,9 @@
         }
 
         // ======================================================
-        // Multi-tier TTS: Google Translate TTS endpoint (tier 1)
-        //              -> browser speechSynthesis (tier 2)
-        //              -> friendly failure message (tier 3)
+        // TTS Audio Playback
         // ======================================================
-        const GOOGLE_TTS_CHUNK_LIMIT = 190; // this endpoint truncates long text
+        const GOOGLE_TTS_CHUNK_LIMIT = 190;
 
         function chunkText(text, maxLen) {
             const words = text.split(/\s+/);
@@ -813,140 +647,46 @@
                         reject(reason || new Error('google-tts-failed'));
                     };
 
-                    // Hard timeout: this endpoint is unofficial and can hang
-                    // or silently fail without firing an 'error' event.
                     const timeoutId = setTimeout(() => fail(new Error('google-tts-timeout')), 4000);
 
-                    audio.addEventListener('canplaythrough', () => {
-                        clearTimeout(timeoutId);
-                    }, { once: true });
-
-                    audio.addEventListener('ended', () => {
-                        index += 1;
-                        playNext();
-                    }, { once: true });
-
-                    audio.addEventListener('error', () => {
-                        clearTimeout(timeoutId);
-                        fail(new Error('google-tts-audio-error'));
-                    }, { once: true });
+                    audio.addEventListener('canplaythrough', () => clearTimeout(timeoutId), { once: true });
+                    audio.addEventListener('ended', () => { index += 1; playNext(); }, { once: true });
+                    audio.addEventListener('error', () => { clearTimeout(timeoutId); fail(new Error('error')); }, { once: true });
 
                     audio.src = url;
-                    audio.play().catch((e) => {
-                        clearTimeout(timeoutId);
-                        fail(e);
-                    });
+                    audio.play().catch(e => { clearTimeout(timeoutId); fail(e); });
                 };
-
                 playNext();
-            });
-        }
-
-        let cachedVoices = [];
-        function loadVoices() {
-            cachedVoices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
-        }
-        if ('speechSynthesis' in window) {
-            loadVoices();
-            window.speechSynthesis.onvoiceschanged = loadVoices;
-        }
-
-        function playViaBrowserSynthesis(text, langPrefixes) {
-            return new Promise((resolve, reject) => {
-                if (!('speechSynthesis' in window)) {
-                    reject(new Error('speech-synthesis-unsupported'));
-                    return;
-                }
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(text);
-
-                const matchedVoice = cachedVoices.find(v =>
-                    langPrefixes.some(p => v.lang && v.lang.toLowerCase().startsWith(p))
-                );
-
-                if (matchedVoice) {
-                    utterance.voice = matchedVoice;
-                    utterance.lang = matchedVoice.lang;
-                } else {
-                    // No native voice installed for this language on this
-                    // device. We still try with the lang tag set; most
-                    // mobile TTS engines will do a best-effort read, but it
-                    // may fall back to a default voice/accent.
-                    utterance.lang = langPrefixes[0] + (langPrefixes[0] === 'hy' ? '-AM' : '-IR');
-                }
-
-                utterance.rate = 0.9;
-                utterance.onend = () => resolve();
-                utterance.onerror = (e) => reject(e.error || new Error('speech-synthesis-error'));
-
-                window.speechSynthesis.speak(utterance);
             });
         }
 
         speakBtn.addEventListener('click', async () => {
             const cfg = DIR_CONFIG[direction];
             const textToSpeak = targetText.textContent.trim();
-            const isPlaceholder = textToSpeak === DIR_CONFIG.fa2hy.targetPlaceholder ||
-                                   textToSpeak === DIR_CONFIG.hy2fa.targetPlaceholder;
-            if (!textToSpeak || isPlaceholder) return;
+            if (!textToSpeak || textToSpeak.includes('نمایش داده می‌شود')) return;
 
             speakBtn.disabled = true;
             statusText.className = 'status-text';
-            statusText.textContent = 'در حال آماده‌سازی صدا...';
+            statusText.textContent = 'در حال پخش صدا...';
 
             try {
                 await playViaGoogleTranslateTTS(textToSpeak, cfg.ttsLang);
                 statusText.textContent = 'پخش صدا انجام شد.';
             } catch (err) {
-                console.warn('Google TTS failed, falling back to speechSynthesis:', err);
-                statusText.className = 'status-text warn';
-                statusText.textContent = 'در حال تلاش با روش جایگزین پخش صدا...';
-                try {
-                    await playViaBrowserSynthesis(textToSpeak, cfg.synthLangPrefixes);
-                    statusText.className = 'status-text';
-                    statusText.textContent = 'پخش صدا انجام شد (روش جایگزین).';
-                } catch (err2) {
-                    console.error('speechSynthesis fallback also failed:', err2);
-                    statusText.className = 'status-text err';
-                    statusText.textContent = 'پخش صوتی در این دستگاه ممکن نشد. می‌توانید از دکمه کپی استفاده کنید.';
-                }
+                statusText.className = 'status-text err';
+                statusText.textContent = 'خطا در پخش صوتی آنلاین.';
             } finally {
                 speakBtn.disabled = false;
             }
         });
 
-        // ======================================================
-        // Copy
-        // ======================================================
         copyBtn.addEventListener('click', () => {
-            const textToCopy = targetText.textContent;
-            navigator.clipboard.writeText(textToCopy).then(() => {
+            navigator.clipboard.writeText(targetText.textContent).then(() => {
                 const originalText = copyBtn.textContent;
                 copyBtn.textContent = '✅ کپی شد';
                 setTimeout(() => copyBtn.textContent = originalText, 2000);
             });
         });
-
-        // ======================================================
-        // Service Worker registration
-        // ======================================================
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => {
-                        console.log('ServiceWorker registered!', reg);
-                        reg.update();
-                    })
-                    .catch(err => console.log('ServiceWorker registration failed: ', err));
-            });
-
-            let refreshing = false;
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                if (refreshing) return;
-                refreshing = true;
-                window.location.reload();
-            });
-        }
     </script>
 </body>
 </html>

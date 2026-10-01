@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ترجمه صوتی فارسی به ارمنی</title>
+    <title>مترجم صوتی پیشرفته هوش مصنوعی</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#121212">
     <style>
@@ -44,8 +44,21 @@
         }
 
         h1 {
-            font-size: 1.15rem;
+            font-size: 1.1rem;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .swap-lang-btn {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            color: var(--primary-color);
+            padding: 4px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
         }
 
         .icon-btn {
@@ -104,11 +117,9 @@
         }
 
         .result-content {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             font-weight: 700;
             color: #818cf8;
-            direction: ltr;
-            text-align: left;
         }
 
         .action-row {
@@ -141,7 +152,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            margin: 20px 0;
+            margin: 15px 0;
             gap: 12px;
         }
 
@@ -167,24 +178,18 @@
         }
 
         @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
-            }
-            70% {
-                box-shadow: 0 0 0 20px rgba(239, 68, 68, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
-            }
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+            70% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
 
         .status-text {
             font-size: 0.9rem;
             color: var(--text-muted);
             height: 20px;
+            text-align: center;
         }
 
-        /* Modal Styles */
         .modal {
             position: fixed;
             top: 0;
@@ -260,18 +265,18 @@
 <body>
 
     <header>
-        <h1>مترجم صوتی فارسی ⇄ ارمنی</h1>
+        <h1 id="headerTitle">مترجم صوتی فارسی ⇄ ارمنی <button class="swap-lang-btn" id="swapLangBtn" title="تغییر جهت ترجمه">⇄ معکوس</button></h1>
         <button class="icon-btn" id="settingsBtn" title="تنظیمات API">⚙️</button>
     </header>
 
     <div class="main-container">
-        <!-- Persian Speech Input Card -->
+        <!-- Input Card -->
         <div class="card">
             <div class="card-label">
-                <span>متن فارسی (گفتار شما)</span>
+                <span id="inputLabel">متن فارسی (گفتار شما)</span>
                 <span id="charCount">0 کاراکتر</span>
             </div>
-            <div class="card-content" id="persianText" contenteditable="true" placeholder="با زدن دکمه میکروفون صحبت کنید یا تایپ کنید..."></div>
+            <div class="card-content" id="sourceText" contenteditable="true" placeholder="با زدن دکمه میکروفون صحبت کنید یا تایپ کنید..."></div>
             <div class="action-row">
                 <button class="small-btn" id="clearBtn">پاک کردن</button>
                 <button class="small-btn" id="translateNowBtn" style="background: var(--primary-color); color: white; border: none;">ترجمه کن</button>
@@ -284,12 +289,12 @@
             <div class="status-text" id="statusText">آماده برای ضبط صدا</div>
         </div>
 
-        <!-- Armenian Translation Card -->
+        <!-- Result Card -->
         <div class="card result-card">
             <div class="card-label">
-                <span>ترجمه ارمنی (عاملیانه / ارمنستان)</span>
+                <span id="outputLabel">ترجمه ارمنی (عاملیانه / ارمنستان)</span>
             </div>
-            <div class="card-content result-content" id="armenianText">ترجمه اینجا نمایش داده می‌شود...</div>
+            <div class="card-content result-content" id="targetText" style="direction: ltr; text-align: left;">ترجمه اینجا نمایش داده می‌شود...</div>
             <div class="action-row">
                 <button class="small-btn" id="speakBtn">🔊 پخش صوتی</button>
                 <button class="small-btn" id="copyBtn">📋 کپی متن</button>
@@ -317,11 +322,10 @@
     </div>
 
     <script>
-        // DOM Elements
         const micBtn = document.getElementById('micBtn');
         const statusText = document.getElementById('statusText');
-        const persianText = document.getElementById('persianText');
-        const armenianText = document.getElementById('armenianText');
+        const sourceText = document.getElementById('sourceText');
+        const targetText = document.getElementById('targetText');
         const clearBtn = document.getElementById('clearBtn');
         const translateNowBtn = document.getElementById('translateNowBtn');
         const speakBtn = document.getElementById('speakBtn');
@@ -332,8 +336,11 @@
         const apiProviderSelect = document.getElementById('apiProvider');
         const apiKeyInput = document.getElementById('apiKeyInput');
         const charCount = document.getElementById('charCount');
+        const swapLangBtn = document.getElementById('swapLangBtn');
+        const inputLabel = document.getElementById('inputLabel');
+        const outputLabel = document.getElementById('outputLabel');
 
-        // Load Settings
+        let isPersianToArmenian = true;
         let apiKey = localStorage.getItem('translator_api_key') || '';
         let apiProvider = localStorage.getItem('translator_provider') || 'groq';
         apiKeyInput.value = apiKey;
@@ -353,24 +360,49 @@
             alert('تنظیمات با موفقیت ذخیره شد.');
         });
 
-        // Speech Recognition Setup
+        // Swap Languages Direction
+        swapLangBtn.addEventListener('click', () => {
+            isPersianToArmenian = !isPersianToArmenian;
+            if (isPersianToArmenian) {
+                inputLabel.textContent = "متن فارسی (گفتار شما)";
+                outputLabel.textContent = "ترجمه ارمنی (عاملیانه / ارمنستان)";
+                targetText.style.direction = "ltr";
+                targetText.style.textAlign = "left";
+                sourceText.style.direction = "rtl";
+                sourceText.style.textAlign = "right";
+            } else {
+                inputLabel.textContent = "متن ارمنی (گفتار شما)";
+                outputLabel.textContent = "ترجمه فارسی روان";
+                targetText.style.direction = "rtl";
+                targetText.style.textAlign = "right";
+                sourceText.style.direction = "ltr";
+                sourceText.style.textAlign = "left";
+            }
+            sourceText.textContent = '';
+            targetText.textContent = 'ترجمه اینجا نمایش داده می‌شود...';
+            updateCharCount();
+        });
+
+        // Speech Recognition with 2-second Silence Timeout
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
         let isRecording = false;
+        let silenceTimer = null;
 
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
-            recognition.lang = 'fa-IR';
-            recognition.continuous = false;
+            recognition.continuous = true;
             recognition.interimResults = true;
 
             recognition.onstart = () => {
                 isRecording = true;
                 micBtn.classList.add('recording');
                 statusText.textContent = 'در حال گوش دادن... صحبت کنید';
+                resetSilenceTimer();
             };
 
             recognition.onresult = (event) => {
+                resetSilenceTimer(); // Reset timer on every new speech chunk detected
                 let interimTranscript = '';
                 let finalTranscript = '';
 
@@ -383,10 +415,8 @@
                 }
 
                 if (finalTranscript) {
-                    persianText.textContent += ' ' + finalTranscript;
+                    sourceText.textContent += ' ' + finalTranscript;
                     updateCharCount();
-                    // Auto translate after speech ends
-                    translateText(persianText.textContent.trim());
                 } else if (interimTranscript) {
                     statusText.textContent = interimTranscript;
                 }
@@ -400,6 +430,10 @@
 
             recognition.onend = () => {
                 stopRecordingState();
+                const text = sourceText.textContent.trim();
+                if (text) {
+                    translateText(text);
+                }
             };
         } else {
             statusText.textContent = 'مرورگر شما از تشخیص صوتی پشتیبانی نمی‌کند.';
@@ -407,8 +441,19 @@
             micBtn.disabled = true;
         }
 
+        function resetSilenceTimer() {
+            if (silenceTimer) clearTimeout(silenceTimer);
+            // 2 seconds of total silence automatically stops recording and triggers translation
+            silenceTimer = setTimeout(() => {
+                if (isRecording && recognition) {
+                    recognition.stop();
+                }
+            }, 2000);
+        }
+
         function stopRecordingState() {
             isRecording = false;
+            if (silenceTimer) clearTimeout(silenceTimer);
             micBtn.classList.remove('recording');
             statusText.textContent = 'آماده برای ضبط صدا';
         }
@@ -423,7 +468,8 @@
                     alert('لطفاً ابتدا کلید API خود را در تنظیمات وارد کنید.');
                     return;
                 }
-                persianText.textContent = '';
+                sourceText.textContent = '';
+                recognition.lang = isPersianToArmenian ? 'fa-IR' : 'hy-AM';
                 try {
                     recognition.start();
                 } catch (e) {
@@ -432,19 +478,19 @@
             }
         });
 
-        persianText.addEventListener('input', updateCharCount);
+        sourceText.addEventListener('input', updateCharCount);
         function updateCharCount() {
-            charCount.textContent = persianText.textContent.length + ' کاراکتر';
+            charCount.textContent = sourceText.textContent.length + ' کاراکتر';
         }
 
         clearBtn.addEventListener('click', () => {
-            persianText.textContent = '';
-            armenianText.textContent = 'ترجمه اینجا نمایش داده می‌شود...';
+            sourceText.textContent = '';
+            targetText.textContent = 'ترجمه اینجا نمایش داده می‌شود...';
             updateCharCount();
         });
 
         translateNowBtn.addEventListener('click', () => {
-            const text = persianText.textContent.trim();
+            const text = sourceText.textContent.trim();
             if (text) translateText(text);
         });
 
@@ -456,17 +502,19 @@
                 return;
             }
 
-            armenianText.textContent = 'در حال ترجمه روان ارمنی...';
+            targetText.textContent = 'در حال ترجمه روان...';
             statusText.textContent = 'ارسال به هوش مصنوعی...';
 
-            const systemPrompt = "You are a professional native translator from Persian to colloquial, everyday spoken Armenian (Armenia dialect, Eastern Armenian). Translate the given Persian sentence into natural, fluent colloquial Armenian used daily by native speakers in Yerevan. Output ONLY the translated Armenian text without any quotes, explanations, or extra remarks.";
+            let systemPrompt = "";
+            if (isPersianToArmenian) {
+                systemPrompt = "You are a professional native translator from Persian to colloquial, everyday spoken Armenian (Armenia dialect, Eastern Armenian). Translate the given Persian sentence into natural, fluent colloquial Armenian used daily by native speakers in Yerevan. Output ONLY the translated Armenian text without any quotes, explanations, or extra remarks.";
+            } else {
+                systemPrompt = "You are a professional native translator from Eastern Armenian to natural, fluent everyday Persian. Translate the given Armenian text into fluent, conversational Persian. Output ONLY the translated Persian text without any quotes, explanations, or extra remarks.";
+            }
 
             try {
                 let responseData = '';
                 if (apiProvider === 'groq') {
-                    // NOTE: llama-3.1-8b-instant / llama-3.3-70b-versatile were
-                    // deprecated by Groq on 2026-08-16. openai/gpt-oss-120b is the
-                    // current recommended general-purpose replacement.
                     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                         method: 'POST',
                         headers: {
@@ -484,37 +532,23 @@
                     });
                     const data = await res.json();
                     if (!res.ok || data.error) {
-                        throw new Error(
-                            (data.error && data.error.message) ||
-                            `خطای HTTP ${res.status} از Groq`
-                        );
+                        throw new Error((data.error && data.error.message) || `خطای HTTP ${res.status} از Groq`);
                     }
                     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
                         throw new Error('پاسخ نامعتبر از Groq دریافت شد.');
                     }
                     responseData = data.choices[0].message.content;
                 } else {
-                    // Gemini API
                     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            contents: [
-                                {
-                                    role: 'user',
-                                    parts: [
-                                        { text: `${systemPrompt}\n\nPersian text: ${text}` }
-                                    ]
-                                }
-                            ]
+                            contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\nText: ${text}` }] }]
                         })
                     });
                     const data = await res.json();
                     if (!res.ok || data.error) {
-                        throw new Error(
-                            (data.error && data.error.message) ||
-                            `خطای HTTP ${res.status} از Gemini`
-                        );
+                        throw new Error((data.error && data.error.message) || `خطای HTTP ${res.status} از Gemini`);
                     }
                     if (!data.candidates || !data.candidates[0]) {
                         throw new Error('پاسخ نامعتبر از Gemini دریافت شد.');
@@ -522,34 +556,49 @@
                     responseData = data.candidates[0].content.parts[0].text;
                 }
 
-                armenianText.textContent = responseData.trim();
+                targetText.textContent = responseData.trim();
                 statusText.textContent = 'ترجمه انجام شد.';
             } catch (err) {
                 console.error(err);
-                armenianText.textContent = 'خطا در ارتباط با هوش مصنوعی';
+                targetText.textContent = 'خطا در ارتباط با هوش مصنوعی';
                 statusText.textContent = 'خطا: ' + err.message;
             }
         }
 
-        // Text-to-Speech (Armenian)
+        // Robust Text-to-Speech with Fallbacks
         speakBtn.addEventListener('click', () => {
-            const textToSpeak = armenianText.textContent;
-            if (!textToSpeak || textToSpeak.includes('نمایش داده می‌شود')) return;
+            const textToSpeak = targetText.textContent;
+            if (!textToSpeak || textToSpeak.includes('نمایش داده می‌شود') || textToSpeak.includes('خطا')) return;
 
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(textToSpeak);
-                utterance.lang = 'hy-AM';
-                utterance.rate = 0.9; // Normal fluent conversational speed
+                
+                // Target language voice setting
+                const targetLangCode = isPersianToArmenian ? 'hy-AM' : 'fa-IR';
+                utterance.lang = targetLangCode;
+                utterance.rate = 0.9;
+
+                // Try finding matching voice on mobile
+                const voices = window.speechSynthesis.getVoices();
+                const specificVoice = voices.find(v => v.lang === targetLangCode || v.lang.startsWith(isPersianToArmenian ? 'hy' : 'fa'));
+                if (specificVoice) {
+                    utterance.voice = specificVoice;
+                }
+
+                utterance.onerror = (e) => {
+                    console.error('TTS Error:', e);
+                    alert('پخش صوتی روی این مرورگر برای این زبان پشتیبانی نمی‌شود یا موتور صوتی نصب نیست.');
+                };
+
                 window.speechSynthesis.speak(utterance);
             } else {
                 alert('مرورگر شما از پخش صوتی پشتیبانی نمی‌کند.');
             }
         });
 
-        // Copy Button
         copyBtn.addEventListener('click', () => {
-            const textToCopy = armenianText.textContent;
+            const textToCopy = targetText.textContent;
             navigator.clipboard.writeText(textToCopy).then(() => {
                 const originalText = copyBtn.textContent;
                 copyBtn.textContent = '✅ کپی شد';
@@ -557,27 +606,10 @@
             });
         });
 
-        // Register Service Worker for PWA
+        // PWA Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => {
-                        console.log('ServiceWorker registered!', reg);
-                        // Actively check for a newer sw.js on every load so
-                        // GitHub Pages / mobile browsers don't get stuck on
-                        // an old cached version.
-                        reg.update();
-                    })
-                    .catch(err => console.log('ServiceWorker registration failed: ', err));
-            });
-
-            // When a new service worker takes control (i.e. a new deploy was
-            // just activated), reload once so the user gets the fresh assets.
-            let refreshing = false;
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                if (refreshing) return;
-                refreshing = true;
-                window.location.reload();
+                navigator.serviceWorker.register('sw.js').then(reg => reg.update());
             });
         }
     </script>

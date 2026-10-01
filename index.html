@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مترجم صوتی فارسی ⇄ ارمنی (Whisper)</title>
+    <title>مترجم صوتی پیشرفته هوش مصنوعی</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#121212">
     <style>
@@ -12,9 +12,7 @@
             --surface-color: #1e1e1e;
             --primary-color: #6366f1;
             --primary-hover: #4f46e5;
-            --accent-color: #22c55e;
             --danger-color: #ef4444;
-            --warn-color: #f59e0b;
             --text-main: #f3f4f6;
             --text-muted: #9ca3af;
             --border-color: #2d2d2d;
@@ -47,11 +45,19 @@
         h1 {
             font-size: 1.1rem;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .header-actions {
-            display: flex;
-            gap: 8px;
+        .swap-lang-btn {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            color: var(--primary-color);
+            padding: 4px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
         }
 
         .icon-btn {
@@ -86,7 +92,6 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            position: relative;
         }
 
         .card-label {
@@ -110,7 +115,7 @@
         }
 
         .result-content {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             font-weight: 700;
             color: #818cf8;
         }
@@ -140,42 +145,12 @@
             border-color: var(--text-muted);
         }
 
-        .small-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .swap-section {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .swap-btn {
-            background: var(--surface-color);
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            padding: 8px 16px;
-            border-radius: 999px;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-        }
-
-        .swap-btn:hover {
-            border-color: var(--primary-color);
-            color: var(--primary-color);
-        }
-
         .mic-section {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            margin: 16px 0;
+            margin: 15px 0;
             gap: 12px;
         }
 
@@ -193,11 +168,6 @@
             cursor: pointer;
             box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
             transition: background-color 0.2s;
-        }
-
-        .mic-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
         }
 
         .mic-btn.recording {
@@ -218,9 +188,6 @@
             text-align: center;
         }
 
-        .status-text.warn { color: var(--warn-color); }
-        .status-text.err { color: var(--danger-color); }
-
         .modal {
             position: fixed;
             top: 0;
@@ -235,7 +202,9 @@
             z-index: 100;
         }
 
-        .modal.active { display: flex; }
+        .modal.active {
+            display: flex;
+        }
 
         .modal-content {
             background: var(--surface-color);
@@ -247,8 +216,6 @@
             display: flex;
             flex-direction: column;
             gap: 16px;
-            max-height: 90vh;
-            overflow-y: auto;
         }
 
         .modal-title {
@@ -287,57 +254,41 @@
             cursor: pointer;
             text-align: center;
         }
-
-        .primary-btn:hover { background: var(--primary-hover); }
-
-        .hint {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            line-height: 1.5;
-        }
     </style>
 </head>
 <body>
 
     <header>
-        <h1 id="pageTitle">مترجم صوتی فارسی ⇄ ارمنی</h1>
-        <div class="header-actions">
-            <button class="icon-btn" id="settingsBtn" title="تنظیمات API">⚙️</button>
-        </div>
+        <h1 id="headerTitle">مترجم صوتی فارسی ⇄ ارمنی <button class="swap-lang-btn" id="swapLangBtn" title="تغییر جهت ترجمه">⇄ معکوس</button></h1>
+        <button class="icon-btn" id="settingsBtn" title="تنظیمات API">⚙️</button>
     </header>
 
     <div class="main-container">
-        <!-- Source Card -->
+        <!-- Input Card -->
         <div class="card">
             <div class="card-label">
-                <span id="sourceLabel">متن فارسی (گفتار شما)</span>
+                <span id="inputLabel">متن فارسی (گفتار شما)</span>
                 <span id="charCount">0 کاراکتر</span>
             </div>
-            <div class="card-content" id="sourceText" contenteditable="true" dir="rtl"
-                 placeholder="با زدن دکمه میکروفون صحبت کنید یا تایپ کنید..."></div>
+            <div class="card-content" id="sourceText" contenteditable="true" placeholder="با زدن دکمه میکروفون صحبت کنید..."></div>
             <div class="action-row">
                 <button class="small-btn" id="clearBtn">پاک کردن</button>
                 <button class="small-btn" id="translateNowBtn" style="background: var(--primary-color); color: white; border: none;">ترجمه کن</button>
             </div>
         </div>
 
-        <!-- Language Swap -->
-        <div class="swap-section">
-            <button class="swap-btn" id="swapBtn">⇄ معکوس کردن جهت ترجمه</button>
-        </div>
-
         <!-- Mic Button Section -->
         <div class="mic-section">
-            <button class="mic-btn" id="micBtn" title="شروع ضبط صدا">🎙️</button>
-            <div class="status-text" id="statusText">آماده برای ضبط صدا (Whisper)</div>
+            <button class="mic-btn" id="micBtn" title="شروع ضبط">🎙️</button>
+            <div class="status-text" id="statusText">برای شروع صحبت کلیک کنید</div>
         </div>
 
         <!-- Result Card -->
         <div class="card result-card">
             <div class="card-label">
-                <span id="targetLabel">ترجمه ارمنی (محاوره‌ای / ارمنستان)</span>
+                <span id="outputLabel">ترجمه ارمنی (عاملیانه / ارمنستان)</span>
             </div>
-            <div class="card-content result-content" id="targetText" dir="ltr">ترجمه اینجا نمایش داده می‌شود...</div>
+            <div class="card-content result-content" id="targetText" style="direction: ltr; text-align: left;">ترجمه اینجا نمایش داده می‌شود...</div>
             <div class="action-row">
                 <button class="small-btn" id="speakBtn">🔊 پخش صوتی</button>
                 <button class="small-btn" id="copyBtn">📋 کپی متن</button>
@@ -350,11 +301,15 @@
         <div class="modal-content">
             <div class="modal-title">تنظیمات هوش مصنوعی</div>
             <div class="input-group">
-                <label>کلید API گروک (Groq API Key)</label>
-                <input type="password" id="apiKeyInput" placeholder="gsk_...">
+                <label>انتخاب سرویس</label>
+                <select id="apiProvider">
+                    <option value="groq">Groq (Llama 3)</option>
+                    <option value="gemini">Google Gemini</option>
+                </select>
             </div>
-            <div class="hint">
-                این نسخه برای تشخیص گفتار دقیق ارمنی و فارسی از موتور قدرتمند **Whisper (groq)** استفاده می‌کند و مشکلات یونیکد مرورگر را به طور کامل دور می‌زند.
+            <div class="input-group">
+                <label>کلید API (API Key)</label>
+                <input type="password" id="apiKeyInput" placeholder="کلید خود را اینجا وارد کنید...">
             </div>
             <button class="primary-btn" id="saveSettingsBtn">ذخیره تنظیمات</button>
         </div>
@@ -365,21 +320,25 @@
         const statusText = document.getElementById('statusText');
         const sourceText = document.getElementById('sourceText');
         const targetText = document.getElementById('targetText');
-        const sourceLabel = document.getElementById('sourceLabel');
-        const targetLabel = document.getElementById('targetLabel');
         const clearBtn = document.getElementById('clearBtn');
         const translateNowBtn = document.getElementById('translateNowBtn');
         const speakBtn = document.getElementById('speakBtn');
         const copyBtn = document.getElementById('copyBtn');
-        const swapBtn = document.getElementById('swapBtn');
         const settingsBtn = document.getElementById('settingsBtn');
         const settingsModal = document.getElementById('settingsModal');
         const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+        const apiProviderSelect = document.getElementById('apiProvider');
         const apiKeyInput = document.getElementById('apiKeyInput');
         const charCount = document.getElementById('charCount');
+        const swapLangBtn = document.getElementById('swapLangBtn');
+        const inputLabel = document.getElementById('inputLabel');
+        const outputLabel = document.getElementById('outputLabel');
 
+        let isPersianToArmenian = true;
         let apiKey = localStorage.getItem('translator_api_key') || '';
+        let apiProvider = localStorage.getItem('translator_provider') || 'groq';
         apiKeyInput.value = apiKey;
+        apiProviderSelect.value = apiProvider;
 
         settingsBtn.addEventListener('click', () => settingsModal.classList.add('active'));
         settingsModal.addEventListener('click', (e) => {
@@ -388,158 +347,103 @@
 
         saveSettingsBtn.addEventListener('click', () => {
             apiKey = apiKeyInput.value.trim();
+            apiProvider = apiProviderSelect.value;
             localStorage.setItem('translator_api_key', apiKey);
+            localStorage.setItem('translator_provider', apiProvider);
             settingsModal.classList.remove('active');
             alert('تنظیمات با موفقیت ذخیره شد.');
         });
 
-        let direction = 'fa2hy';
-
-        const DIR_CONFIG = {
-            fa2hy: {
-                whisperLang: 'fa',
-                sourceDir: 'rtl',
-                targetDir: 'ltr',
-                sourceLabel: 'متن فارسی (گفتار شما)',
-                targetLabel: 'ترجمه ارمنی (محاوره‌ای / ارمنستان)',
-                placeholder: 'با زدن دکمه میکروفون صحبت کنید...',
-                targetPlaceholder: 'ترجمه اینجا نمایش داده می‌شود...',
-                ttsLang: 'hy',
-                synthLangPrefixes: ['hy'],
-                systemPrompt: "You are a professional native translator from Persian to colloquial, everyday spoken Armenian (Armenia dialect, Eastern Armenian). Translate the given Persian sentence into natural, fluent colloquial Armenian used daily by native speakers in Yerevan. Output ONLY the translated Armenian text without any quotes, explanations, or extra remarks."
-            },
-            hy2fa: {
-                whisperLang: 'hy',
-                sourceDir: 'ltr',
-                targetDir: 'rtl',
-                sourceLabel: 'متن ارمنی (گفتار شما)',
-                targetLabel: 'ترجمه فارسی',
-                placeholder: 'میکروفون را بزنید یا به ارمنی صحبت کنید...',
-                targetPlaceholder: 'ترجمه فارسی اینجا نمایش داده می‌شود...',
-                ttsLang: 'fa',
-                synthLangPrefixes: ['fa'],
-                systemPrompt: "You are a professional native translator from Armenian (Eastern Armenian, Armenia dialect) to colloquial, everyday spoken Persian (Iran dialect). Translate the given Armenian sentence into natural, fluent colloquial Persian. Output ONLY the translated Persian text without any quotes, explanations, or extra remarks."
+        swapLangBtn.addEventListener('click', () => {
+            isPersianToArmenian = !isPersianToArmenian;
+            if (isPersianToArmenian) {
+                inputLabel.textContent = "متن فارسی (گفتار شما)";
+                outputLabel.textContent = "ترجمه ارمنی (عاملیانه / ارمنستان)";
+                targetText.style.direction = "ltr";
+                targetText.style.textAlign = "left";
+                sourceText.style.direction = "rtl";
+                sourceText.style.textAlign = "right";
+            } else {
+                inputLabel.textContent = "متن ارمنی (گفتار شما)";
+                outputLabel.textContent = "ترجمه فارسی روان";
+                targetText.style.direction = "rtl";
+                targetText.style.textAlign = "right";
+                sourceText.style.direction = "ltr";
+                sourceText.style.textAlign = "left";
             }
-        };
-
-        function applyDirection() {
-            const cfg = DIR_CONFIG[direction];
-            sourceLabel.textContent = cfg.sourceLabel;
-            targetLabel.textContent = cfg.targetLabel;
-            sourceText.setAttribute('dir', cfg.sourceDir);
-            sourceText.setAttribute('placeholder', cfg.placeholder);
-            targetText.setAttribute('dir', cfg.targetDir);
-        }
-
-        swapBtn.addEventListener('click', () => {
-            direction = (direction === 'fa2hy') ? 'hy2fa' : 'fa2hy';
-            const prevTarget = targetText.textContent.trim();
-            const isPlaceholder = prevTarget.includes('نمایش داده می‌شود');
-            sourceText.textContent = isPlaceholder ? '' : prevTarget;
-            targetText.textContent = DIR_CONFIG[direction].targetPlaceholder;
-            applyDirection();
+            sourceText.textContent = '';
+            targetText.textContent = 'ترجمه اینجا نمایش داده می‌شود...';
             updateCharCount();
         });
 
-        applyDirection();
-
-        // ======================================================
-        // MediaRecorder + Groq Whisper API (The Real Fix!)
-        // ======================================================
-        let mediaRecorder = null;
-        let audioChunks = [];
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition = null;
         let isRecording = false;
 
-        async function startRecording() {
-            if (!apiKey) {
-                settingsModal.classList.add('active');
-                alert('لطفاً ابتدا کلید API گروک را در تنظیمات وارد کنید.');
-                return;
-            }
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = true;
 
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-                audioChunks = [];
-
-                mediaRecorder.ondataavailable = (event) => {
-                    if (event.data.size > 0) audioChunks.push(event.data);
-                };
-
-                mediaRecorder.onstop = async () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    // Stop all microphone tracks
-                    stream.getTracks().forEach(track => track.stop());
-                    await sendAudioToWhisper(audioBlob);
-                };
-
-                mediaRecorder.start();
+            recognition.onstart = () => {
                 isRecording = true;
                 micBtn.classList.add('recording');
-                statusText.className = 'status-text';
-                statusText.textContent = 'در حال ضبط صدا... دوباره بزنید تا ارسال شود';
-            } catch (err) {
-                console.error(err);
-                statusText.className = 'status-text err';
-                statusText.textContent = 'خطا در دسترسی به میکروفون: ' + err.message;
-            }
+                statusText.textContent = 'در حال گوش دادن... صحبت کنید';
+            };
+
+            recognition.onresult = (event) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    transcript += event.results[i][0].transcript;
+                }
+                sourceText.textContent = transcript;
+                updateCharCount();
+            };
+
+            recognition.onerror = (event) => {
+                console.error(event.error);
+                statusText.textContent = 'خطا در تشخیص صدا: ' + event.error;
+                stopRecordingState();
+            };
+
+            recognition.onend = () => {
+                stopRecordingState();
+                const text = sourceText.textContent.trim();
+                if (text) {
+                    translateText(text);
+                }
+            };
+        } else {
+            statusText.textContent = 'مرورگر شما از تشخیص صوتی پشتیبانی نمی‌کند.';
+            micBtn.style.opacity = '0.5';
+            micBtn.disabled = true;
         }
 
-        function stopRecording() {
-            if (mediaRecorder && isRecording) {
-                mediaRecorder.stop();
-                isRecording = false;
-                micBtn.classList.remove('recording');
-            }
+        function stopRecordingState() {
+            isRecording = false;
+            micBtn.classList.remove('recording');
+            statusText.textContent = 'آماده برای ضبط صدا';
         }
 
         micBtn.addEventListener('click', () => {
+            if (!recognition) return;
             if (isRecording) {
-                stopRecording();
+                recognition.stop();
             } else {
-                startRecording();
+                if (!apiKey) {
+                    settingsModal.classList.add('active');
+                    alert('لطفاً ابتدا کلید API خود را در تنظیمات وارد کنید.');
+                    return;
+                }
+                sourceText.textContent = '';
+                recognition.lang = isPersianToArmenian ? 'fa-IR' : 'hy-AM';
+                try {
+                    recognition.start();
+                } catch (e) {
+                    recognition.stop();
+                }
             }
         });
-
-        async function sendAudioToWhisper(audioBlob) {
-            const cfg = DIR_CONFIG[direction];
-            statusText.className = 'status-text';
-            statusText.textContent = 'در حال ارسال به Whisper...';
-
-            const formData = new FormData();
-            formData.append('file', audioBlob, 'recording.webm');
-            formData.append('model', 'whisper-large-v3');
-            formData.append('language', cfg.whisperLang);
-
-            try {
-                const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${apiKey}`
-                    },
-                    body: formData
-                });
-
-                const data = await res.json();
-                if (!res.ok || data.error) {
-                    throw new Error((data.error && data.error.message) || `خطای سرور: ${res.status}`);
-                }
-
-                const text = data.text ? data.text.trim() : '';
-                if (text) {
-                    sourceText.textContent = text;
-                    updateCharCount();
-                    translateText(text);
-                } else {
-                    statusText.className = 'status-text warn';
-                    statusText.textContent = 'صدایی تشخیص داده نشد، دوباره تلاش کنید.';
-                }
-            } catch (err) {
-                console.error(err);
-                statusText.className = 'status-text err';
-                statusText.textContent = 'خطا در Whisper: ' + err.message;
-            }
-        }
 
         sourceText.addEventListener('input', updateCharCount);
         function updateCharCount() {
@@ -548,7 +452,7 @@
 
         clearBtn.addEventListener('click', () => {
             sourceText.textContent = '';
-            targetText.textContent = DIR_CONFIG[direction].targetPlaceholder;
+            targetText.textContent = 'ترجمه اینجا نمایش داده می‌شود...';
             updateCharCount();
         });
 
@@ -557,9 +461,6 @@
             if (text) translateText(text);
         });
 
-        // ======================================================
-        // AI Translation (Groq LLM)
-        // ======================================================
         async function translateText(text) {
             if (!apiKey) {
                 settingsModal.classList.add('active');
@@ -567,121 +468,80 @@
                 return;
             }
 
-            const cfg = DIR_CONFIG[direction];
-            targetText.textContent = 'در حال ترجمه...';
-            statusText.className = 'status-text';
+            targetText.textContent = 'در حال ترجمه روان...';
             statusText.textContent = 'ارسال به هوش مصنوعی...';
 
-            try {
-                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${apiKey}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        model: 'llama-3.3-70b-versatile',
-                        messages: [
-                            { role: 'system', content: cfg.systemPrompt },
-                            { role: 'user', content: text }
-                        ],
-                        temperature: 0.3
-                    })
-                });
+            let systemPrompt = "";
+            if (isPersianToArmenian) {
+                systemPrompt = "You are a professional native translator from Persian to colloquial, everyday spoken Armenian (Armenia dialect, Eastern Armenian). Translate the given Persian sentence into natural, fluent colloquial Armenian used daily by native speakers in Yerevan. Output ONLY the translated Armenian text without any quotes, explanations, or extra remarks.";
+            } else {
+                systemPrompt = "You are a professional native translator from Eastern Armenian to natural, fluent everyday Persian. Translate the given Armenian text into fluent, conversational Persian. Output ONLY the translated Persian text without any quotes, explanations, or extra remarks.";
+            }
 
-                const data = await res.json();
-                if (!res.ok || data.error) {
-                    throw new Error((data.error && data.error.message) || `خطای HTTP ${res.status}`);
+            try {
+                let responseData = '';
+                if (apiProvider === 'groq') {
+                    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${apiKey}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            model: 'llama-3.3-70b-versatile',
+                            messages: [
+                                { role: 'system', content: systemPrompt },
+                                { role: 'user', content: text }
+                            ],
+                            temperature: 0.3
+                        })
+                    });
+                    const data = await res.json();
+                    if (!res.ok || data.error) {
+                        throw new Error((data.error && data.error.message) || `خطای HTTP ${res.status} از Groq`);
+                    }
+                    responseData = data.choices[0].message.content;
+                } else {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\nText: ${text}` }] }]
+                        })
+                    });
+                    const data = await res.json();
+                    if (!res.ok || data.error) {
+                        throw new Error((data.error && data.error.message) || `خطای HTTP ${res.status} از Gemini`);
+                    }
+                    responseData = data.candidates[0].content.parts[0].text;
                 }
 
-                const responseData = data.choices[0].message.content;
                 targetText.textContent = responseData.trim();
                 statusText.textContent = 'ترجمه انجام شد.';
             } catch (err) {
                 console.error(err);
                 targetText.textContent = 'خطا در ارتباط با هوش مصنوعی';
-                statusText.className = 'status-text err';
                 statusText.textContent = 'خطا: ' + err.message;
             }
         }
 
-        // ======================================================
-        // TTS Audio Playback
-        // ======================================================
-        const GOOGLE_TTS_CHUNK_LIMIT = 190;
+        speakBtn.addEventListener('click', () => {
+            const textToSpeak = targetText.textContent;
+            if (!textToSpeak || textToSpeak.includes('نمایش داده می‌شود') || textToSpeak.includes('خطا')) return;
 
-        function chunkText(text, maxLen) {
-            const words = text.split(/\s+/);
-            const chunks = [];
-            let current = '';
-            for (const word of words) {
-                if ((current + ' ' + word).trim().length > maxLen) {
-                    if (current) chunks.push(current.trim());
-                    current = word;
-                } else {
-                    current = (current + ' ' + word).trim();
-                }
-            }
-            if (current) chunks.push(current.trim());
-            return chunks.length ? chunks : [text];
-        }
-
-        function playViaGoogleTranslateTTS(text, lang) {
-            return new Promise((resolve, reject) => {
-                const chunks = chunkText(text, GOOGLE_TTS_CHUNK_LIMIT);
-                let index = 0;
-
-                const playNext = () => {
-                    if (index >= chunks.length) {
-                        resolve();
-                        return;
-                    }
-                    const chunk = chunks[index];
-                    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(chunk)}&tl=${encodeURIComponent(lang)}&client=tw-ob`;
-                    const audio = new Audio();
-                    let settled = false;
-
-                    const fail = (reason) => {
-                        if (settled) return;
-                        settled = true;
-                        reject(reason || new Error('google-tts-failed'));
-                    };
-
-                    const timeoutId = setTimeout(() => fail(new Error('google-tts-timeout')), 4000);
-
-                    audio.addEventListener('canplaythrough', () => clearTimeout(timeoutId), { once: true });
-                    audio.addEventListener('ended', () => { index += 1; playNext(); }, { once: true });
-                    audio.addEventListener('error', () => { clearTimeout(timeoutId); fail(new Error('error')); }, { once: true });
-
-                    audio.src = url;
-                    audio.play().catch(e => { clearTimeout(timeoutId); fail(e); });
-                };
-                playNext();
+            const targetLangCode = isPersianToArmenian ? 'hy' : 'fa';
+            const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(textToSpeak)}&tl=${targetLangCode}&client=tw-ob`;
+            
+            const audio = new Audio(audioUrl);
+            audio.play().catch(e => {
+                console.error('Audio Play Error:', e);
+                alert('امکان پخش صوتی آنلاین وجود ندارد.');
             });
-        }
-
-        speakBtn.addEventListener('click', async () => {
-            const cfg = DIR_CONFIG[direction];
-            const textToSpeak = targetText.textContent.trim();
-            if (!textToSpeak || textToSpeak.includes('نمایش داده می‌شود')) return;
-
-            speakBtn.disabled = true;
-            statusText.className = 'status-text';
-            statusText.textContent = 'در حال پخش صدا...';
-
-            try {
-                await playViaGoogleTranslateTTS(textToSpeak, cfg.ttsLang);
-                statusText.textContent = 'پخش صدا انجام شد.';
-            } catch (err) {
-                statusText.className = 'status-text err';
-                statusText.textContent = 'خطا در پخش صوتی آنلاین.';
-            } finally {
-                speakBtn.disabled = false;
-            }
         });
 
         copyBtn.addEventListener('click', () => {
-            navigator.clipboard.writeText(targetText.textContent).then(() => {
+            const textToCopy = targetText.textContent;
+            navigator.clipboard.writeText(textToCopy).then(() => {
                 const originalText = copyBtn.textContent;
                 copyBtn.textContent = '✅ کپی شد';
                 setTimeout(() => copyBtn.textContent = originalText, 2000);
